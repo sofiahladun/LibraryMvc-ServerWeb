@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] — ІС «Бібліотека»</title>
+    <title>@ViewData["Title"] — Між Сторінками</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
@@ -11,7 +11,7 @@
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-4">
             <div class="container">
-                <a class="navbar-brand fw-semibold" asp-controller="Home" asp-action="Index">ІС «Бібліотека»</a>
+                <a class="navbar-brand fw-semibold" asp-controller="Home" asp-action="Index">Між Сторінками</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
                     <span class="navbar-toggler-icon"></span>
                 </button>
@@ -37,12 +37,26 @@
     </header>
 
     <main class="container flex-grow-1 pb-4">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["InfoMessage"] != null)
+        {
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                @TempData["InfoMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
         @RenderBody()
     </main>
 
     <footer class="border-top bg-white text-muted py-3 mt-auto">
         <div class="container text-center small">
-            &copy; 2026 — Інформаційна система «Бібліотека» (ASP.NET Core MVC)
+            &copy; 2026 — Бібліотека "Між сторінками" (ASP.NET Core MVC)
         </div>
     </footer>
 

@@ -1,4 +1,5 @@
 ﻿using LibraryMvc.Data;
+using LibraryMvc.Extensions;
 using LibraryMvc.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -9,6 +10,8 @@ namespace LibraryMvc.Controllers
     public class LoansController : Controller
     {
         private readonly LibraryContext _context;
+        private const string CreateSessionKey = "Draft_CreateLoan";
+        private static string EditSessionKey(int id) => $"Draft_EditLoan_{id}";
 
         public LoansController(LibraryContext context)
         {
@@ -52,6 +55,14 @@ namespace LibraryMvc.Controllers
         // GET: Loans/Create
         public IActionResult Create()
         {
+            var draft = HttpContext.Session.GetObject<Loan>(CreateSessionKey);
+            if (draft != null)
+            {
+                ViewBag.IsRestoredFromSession = true;
+                PopulateDropDowns(draft.BookId, draft.ReaderId);
+                return View(draft);
+            }
+
             PopulateDropDowns();
             return View(new Loan
             {
@@ -61,39 +72,73 @@ namespace LibraryMvc.Controllers
             });
         }
 
+        // POST: Loans/SaveCreateDraft
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SaveCreateDraft(
+            [Bind("BookId,ReaderId,LoanDate,DueDate,Notes")] Loan loan)
+        {
+            loan.Status = "Видано";
+            HttpContext.Session.SetObject(CreateSessionKey, loan);
+            return Ok();
+        }
+
+        // POST: Loans/ClearCreateDraft
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ClearCreateDraft()
+        {
+            HttpContext.Session.Remove(CreateSessionKey);
+            TempData["InfoMessage"] = "Чернетку видачі очищено із сесії.";
+            return RedirectToAction(nameof(Create));
+        }
+
         // POST: Loans/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("BookId,ReaderId,LoanDate,DueDate,Notes")] Loan loan)
+            [Bind("BookId,ReaderId,LoanDate,DueDate,Notes")] Loan loan,
+            string actionType = "db")
         {
+            loan.Status = "Видано";
+
+            if (actionType == "session")
+            {
+                HttpContext.Session.SetObject(CreateSessionKey, loan);
+                TempData["InfoMessage"] = "Чернетку видачі збережено в сесії (у БД не записано).";
+                return RedirectToAction(nameof(Create));
+            }
+
             var book = await _context.Books.FindAsync(loan.BookId);
             if (book == null)
             {
-                ModelState.AddModelError("BookId", "Обрану книгу не знайдено.");
+                ModelState.AddModelError(nameof(loan.BookId), "Обрану книгу не знайдено.");
             }
             else if (book.AvailableCopies <= 0)
             {
-                ModelState.AddModelError("BookId", "На жаль, вільних примірників цієї книги зараз немає.");
+                ModelState.AddModelError(nameof(loan.BookId), "На жаль, вільних примірників цієї книги зараз немає.");
             }
 
             if (ModelState.IsValid && book != null)
             {
-                loan.Status = "Видано";
                 loan.ReturnDate = null;
                 book.AvailableCopies -= 1;
 
                 _context.Add(loan);
                 _context.Update(book);
                 await _context.SaveChangesAsync();
+
+                HttpContext.Session.Remove(CreateSessionKey);
+                TempData["SuccessMessage"] = "Видачу книги оформлено в БД, сесію очищено.";
                 return RedirectToAction(nameof(Index));
             }
 
+            HttpContext.Session.SetObject(CreateSessionKey, loan);
             PopulateDropDowns(loan.BookId, loan.ReaderId);
             return View(loan);
         }
 
-        // POST: Loans/ReturnBook/5 — швидке повернення книги однією кнопкою
+        // POST: Loans/ReturnBook/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReturnBook(int id)
@@ -115,6 +160,8 @@ namespace LibraryMvc.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+                HttpContext.Session.Remove(EditSessionKey(id));
+                TempData["SuccessMessage"] = "Книгу позначено як повернену.";
             }
 
             return RedirectToAction(nameof(Index));
@@ -125,27 +172,69 @@ namespace LibraryMvc.Controllers
         {
             if (id == null) return NotFound();
 
-            var loan = await _context.Loans.FindAsync(id);
-            if (loan == null) return NotFound();
+            var key = EditSessionKey(id.Value);
+            var sessionLoan = HttpContext.Session.GetObject<Loan>(key);
 
-            PopulateDropDowns(loan.BookId, loan.ReaderId);
-            return View(loan);
+            if (sessionLoan != null)
+            {
+                ViewBag.IsRestoredFromSession = true;
+                PopulateDropDowns(sessionLoan.BookId, sessionLoan.ReaderId);
+                return View(sessionLoan);
+            }
+
+            var dbLoan = await _context.Loans.FindAsync(id);
+            if (dbLoan == null) return NotFound();
+
+            HttpContext.Session.SetObject(key, dbLoan);
+            ViewBag.IsRestoredFromSession = false;
+            PopulateDropDowns(dbLoan.BookId, dbLoan.ReaderId);
+            return View(dbLoan);
+        }
+
+        // POST: Loans/SaveEditDraft/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SaveEditDraft(int id,
+            [Bind("Id,BookId,ReaderId,LoanDate,DueDate,ReturnDate,Status,Notes")] Loan loan)
+        {
+            loan.Id = id;
+            HttpContext.Session.SetObject(EditSessionKey(id), loan);
+            return Ok();
+        }
+
+        // POST: Loans/ResetEditDraft/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ResetEditDraft(int id)
+        {
+            HttpContext.Session.Remove(EditSessionKey(id));
+            TempData["InfoMessage"] = "Чернетку сесії скинуто. Завантажено актуальні дані з БД.";
+            return RedirectToAction(nameof(Edit), new { id });
         }
 
         // POST: Loans/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id,
-            [Bind("Id,BookId,ReaderId,LoanDate,DueDate,ReturnDate,Status,Notes")] Loan loan)
+            [Bind("Id,BookId,ReaderId,LoanDate,DueDate,ReturnDate,Status,Notes")] Loan loan,
+            string actionType = "db")
         {
             if (id != loan.Id) return NotFound();
+
+            var key = EditSessionKey(id);
+
+            if (actionType == "session")
+            {
+                HttpContext.Session.SetObject(key, loan);
+                TempData["InfoMessage"] = "Зміни видачі збережено у сесії. Натисніть «Записати в БД» для збереження.";
+                return RedirectToAction(nameof(Edit), new { id });
+            }
 
             if (ModelState.IsValid)
             {
                 var existingLoan = await _context.Loans.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id);
                 if (existingLoan == null) return NotFound();
 
-                // Коригування доступних примірників при зміні статусу
                 if (existingLoan.Status == "Видано" && loan.Status == "Повернуто")
                 {
                     var book = await _context.Books.FindAsync(loan.BookId);
@@ -163,9 +252,14 @@ namespace LibraryMvc.Controllers
 
                 _context.Update(loan);
                 await _context.SaveChangesAsync();
+
+                HttpContext.Session.Remove(key);
+                TempData["SuccessMessage"] = "Запис видачі оновлено в БД, сесію очищено.";
                 return RedirectToAction(nameof(Index));
             }
 
+            HttpContext.Session.SetObject(key, loan);
+            ViewBag.IsRestoredFromSession = true;
             PopulateDropDowns(loan.BookId, loan.ReaderId);
             return View(loan);
         }
@@ -200,6 +294,7 @@ namespace LibraryMvc.Controllers
 
                 _context.Loans.Remove(loan);
                 await _context.SaveChangesAsync();
+                HttpContext.Session.Remove(EditSessionKey(id));
             }
             return RedirectToAction(nameof(Index));
         }
