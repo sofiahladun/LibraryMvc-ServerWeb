@@ -1,0 +1,50 @@
+﻿@model LibraryMvc.Models.Loan
+@{
+    ViewData["Title"] = "Редагувати видачу";
+}
+
+<h2>Редагувати запис видачі</h2>
+<hr />
+<div class="card border-0 shadow-sm p-4" style="max-width: 650px;">
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <div class="mb-3">
+            <label asp-for="BookId" class="form-label"></label>
+            <select asp-for="BookId" asp-items="ViewBag.BookId" class="form-select" required></select>
+        </div>
+        <div class="mb-3">
+            <label asp-for="ReaderId" class="form-label"></label>
+            <select asp-for="ReaderId" asp-items="ViewBag.ReaderId" class="form-select" required></select>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label asp-for="LoanDate" class="form-label"></label>
+                <input asp-for="LoanDate" class="form-control" type="date" required />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label asp-for="DueDate" class="form-label"></label>
+                <input asp-for="DueDate" class="form-control" type="date" required />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label asp-for="ReturnDate" class="form-label"></label>
+                <input asp-for="ReturnDate" class="form-control" type="date" />
+            </div>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Status" class="form-label"></label>
+            <select asp-for="Status" class="form-select">
+                <option value="Видано">Видано</option>
+                <option value="Повернуто">Повернуто</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Notes" class="form-label"></label>
+            <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">Зберегти зміни</button>
+            <a asp-action="Index" class="btn btn-secondary">Назад</a>
+        </div>
+    </form>
+</div>

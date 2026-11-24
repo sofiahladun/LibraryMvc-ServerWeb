@@ -1,0 +1,13 @@
+﻿@model LibraryMvc.Models.Book
+@{
+    ViewData["Title"] = "Видалити книгу";
+}
+
+<h2 class="text-danger">Підтвердження видалення</h2>
+<div class="alert alert-warning">Ви дійсно бажаєте видалити книгу <strong>@Model.Title</strong> (@Model.Author)? Усі пов'язані записи видач також будуть видалені.</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Видалити</button>
+    <a asp-action="Index" class="btn btn-secondary">Скасувати</a>
+</form>

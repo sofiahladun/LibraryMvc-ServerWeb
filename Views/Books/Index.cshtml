@@ -1,0 +1,60 @@
+﻿@model IEnumerable<LibraryMvc.Models.Book>
+@{
+    ViewData["Title"] = "Книги";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Каталог книг</h2>
+    <a asp-action="Create" class="btn btn-primary">+ Додати книгу</a>
+</div>
+
+<form asp-action="Index" method="get" class="row g-2 mb-3">
+    <div class="col-md-5">
+        <input type="text" name="searchString" value="@ViewData["CurrentFilter"]"
+               class="form-control" placeholder="Пошук за назвою, автором, жанром або ISBN..." />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-secondary">Пошук</button>
+        <a asp-action="Index" class="btn btn-link text-decoration-none">Скинути</a>
+    </div>
+</form>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>@Html.DisplayNameFor(m => m.Title)</th>
+                    <th>@Html.DisplayNameFor(m => m.Author)</th>
+                    <th>@Html.DisplayNameFor(m => m.Genre)</th>
+                    <th>@Html.DisplayNameFor(m => m.PublicationYear)</th>
+                    <th>@Html.DisplayNameFor(m => m.ISBN)</th>
+                    <th>Наявність</th>
+                    <th class="text-end">Дії</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@item.Title</td>
+                        <td>@item.Author</td>
+                        <td>@item.Genre</td>
+                        <td>@item.PublicationYear</td>
+                        <td><code>@item.ISBN</code></td>
+                        <td>
+                            <span class="badge @(item.AvailableCopies > 0 ? "bg-success" : "bg-secondary")">
+                                @item.AvailableCopies / @item.TotalCopies
+                            </span>
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info">Деталі</a>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">Редагувати</a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Видалити</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,91 @@
+﻿@model IEnumerable<LibraryMvc.Models.Loan>
+@{
+    ViewData["Title"] = "Головна";
+}
+
+<div class="mb-4">
+    <h2 class="fw-bold">Панель управління бібліотекою</h2>
+    <p class="text-muted">Облік книжкового фонду, читачів та операцій видачі й повернення книг.</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Найменувань книг</div>
+                <div class="fs-2 fw-bold text-primary">@ViewBag.TotalBooks</div>
+                <div class="small text-muted">Доступно примірників: @ViewBag.AvailableCopies</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Зареєстрованих читачів</div>
+                <div class="fs-2 fw-bold text-success">@ViewBag.TotalReaders</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Книг на руках</div>
+                <div class="fs-2 fw-bold text-dark">@ViewBag.ActiveLoans</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Протерміновано</div>
+                <div class="fs-2 fw-bold text-danger">@ViewBag.OverdueLoans</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <h5 class="mb-0">Останні видачі</h5>
+        <a asp-controller="Loans" asp-action="Index" class="btn btn-sm btn-outline-primary">Усі видачі</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Книга</th>
+                    <th>Читач</th>
+                    <th>Дата видачі</th>
+                    <th>Повернути до</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var isOverdue = item.Status == "Видано" && item.DueDate < DateTime.Today;
+                    <tr>
+                        <td>@item.Book?.Title</td>
+                        <td>@item.Reader?.FullName</td>
+                        <td>@item.LoanDate.ToString("dd.MM.yyyy")</td>
+                        <td>@item.DueDate.ToString("dd.MM.yyyy")</td>
+                        <td>
+                            @if (item.Status == "Повернуто")
+                            {
+                                <span class="badge bg-success">Повернуто</span>
+                            }
+                            else if (isOverdue)
+                            {
+                                <span class="badge bg-danger">Протерміновано</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Видано</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

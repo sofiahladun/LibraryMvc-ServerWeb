@@ -1,0 +1,27 @@
+﻿@model LibraryMvc.Models.Loan
+@{
+    ViewData["Title"] = "Деталі видачі";
+}
+
+<h2>Запис видачі №@Model.Id</h2>
+<hr />
+<div class="card border-0 shadow-sm p-4 mb-3">
+    <dl class="row mb-0">
+        <dt class="col-sm-3">Книга</dt>
+        <dd class="col-sm-9">@Model.Book?.Title (@Model.Book?.Author)</dd>
+        <dt class="col-sm-3">Читач</dt>
+        <dd class="col-sm-9">@Model.Reader?.FullName (@Model.Reader?.LibraryCardNumber)</dd>
+        <dt class="col-sm-3">Дата видачі</dt>
+        <dd class="col-sm-9">@Model.LoanDate.ToString("dd.MM.yyyy")</dd>
+        <dt class="col-sm-3">Повернути до</dt>
+        <dd class="col-sm-9">@Model.DueDate.ToString("dd.MM.yyyy")</dd>
+        <dt class="col-sm-3">Фактичне повернення</dt>
+        <dd class="col-sm-9">@(Model.ReturnDate?.ToString("dd.MM.yyyy") ?? "Ще не повернено")</dd>
+        <dt class="col-sm-3">Статус</dt>
+        <dd class="col-sm-9">@Model.Status</dd>
+        <dt class="col-sm-3">Примітки</dt>
+        <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.Notes) ? "—" : Model.Notes)</dd>
+    </dl>
+</div>
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Редагувати</a>
+<a asp-action="Index" class="btn btn-secondary">До журналу видач</a>
